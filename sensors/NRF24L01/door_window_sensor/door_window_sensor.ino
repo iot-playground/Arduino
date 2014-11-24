@@ -1,3 +1,15 @@
+ /*
+ Door/Window sensor
+ 
+ V1.0 - first version
+ 
+ Created by Igor Jarc <igor.jarc1@gmail.com>
+ See http://iot-playground.com for details
+ 
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ version 2 as published by the Free Software Foundation.
+ */
 #include <avr/sleep.h>    // Sleep Modes
 #include <MySensor.h>
 #include <SPI.h>
