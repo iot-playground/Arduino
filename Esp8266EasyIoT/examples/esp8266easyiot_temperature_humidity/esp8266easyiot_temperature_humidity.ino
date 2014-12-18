@@ -44,18 +44,12 @@ void setup()
 
   pinMode(13, OUTPUT);
 
-  Serial.println("present S_HUM");
+//  Serial.println("present S_HUM");
   esp.present(CHILD_ID_HUM, S_HUM);
 
-  Serial.println("present S_TEMP");
+//  Serial.println("present S_TEMP");
   esp.present(CHILD_ID_TEMP, S_TEMP);
 
-  
-  mSetCommand(msgHum,C_SET);
-//  mSetCommand(msgTemp,C_SET);
-
-  mSetSender(msgHum,esp._nodeId);
-//  mSetSender(msgTemp,esp._nodeId);
 }
 
 void loop()
