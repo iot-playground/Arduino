@@ -32,7 +32,7 @@ void setup()
   esp.begin(incomingMessage, 3, &serialEsp, &Serial);
   //esp.begin(incomingMessage, 3, &serialEsp);
 
-  pinMode(13, OUTPUT);
+  pinMode(RELAY_1, OUTPUT);
 
   esp.present(1, S_DIGITAL_OUTPUT);
 }
