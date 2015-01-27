@@ -1,4 +1,5 @@
  /*
+ V1.1 - additional data types
  V1.0 - first version
  
  Created by Igor Jarc <igor.jarc1@gmail.com>
@@ -28,12 +29,11 @@ Esp8266EasyIoT::Esp8266EasyIoT(){
 	rxFlush();
 }
 
-//#ifdef DEBUG
-
 void Esp8266EasyIoT::begin(void (*_msgCallback)(const Esp8266EasyIoTMsg &), int resetPin, Stream *serial)
 {
 	begin(_msgCallback, resetPin, serial, NULL);
 }
+
 void Esp8266EasyIoT::begin(void (*_msgCallback)(const Esp8266EasyIoTMsg &), int resetPin, Stream *serial, Stream *serialDebug = NULL)
 {
 	debug(PSTR("begin\n"));
@@ -46,7 +46,6 @@ void Esp8266EasyIoT::begin(void (*_msgCallback)(const Esp8266EasyIoTMsg &), int 
 	else
 		this->isDebug = false;		
 #endif
-	//begin(_msgCallback, serial);
 	this->_serial = serial;	
 	this->msgCallback = _msgCallback;
 
@@ -60,44 +59,22 @@ void Esp8266EasyIoT::begin(void (*_msgCallback)(const Esp8266EasyIoTMsg &), int 
 
 	delay(2000);
 
-	while(processesp() != E_IDLE) delay(1);
+	//while(processesp() != E_IDLE) delay(1);
 
+	// wait some time
+	for(int i=0;i<500;i++)
+	{
+		if (processesp() != E_IDLE)
+			delay(10);
+		else
+			break;
+	}
+	
 	// Try to fetch node-id from gateway
 	if (_nodeId == AUTO) {
 		requestNodeId();
 	}
-	//this->isDebug = false;
-	/////////////////////////////////////
-	//this->isDebug = true;	
 }
-//#endif
-
-
-//void Esp8266EasyIoT::begin(void (*_msgCallback)(const Esp8266EasyIoTMsg &), Stream *serial)
-//{
-//	this->_serial = serial;	
-//	this->msgCallback = _msgCallback;
-//
-//	// Read settings from EEPROM
-//	eeprom_read_block((void*)&_nodeId, (void*)EEPROM_NODE_ID_ADDRESS, sizeof(uint16_t));
-//
-//	debug(PSTR("nodeid:%d\n"), _nodeId);
-//
-//	delay(2000);
-//
-//
-//	debug(PSTR("begin 1\n"));
-//
-//	while(processesp() != E_IDLE) delay(1);
-//
-//	// Try to fetch node-id from gateway
-//	if (_nodeId == AUTO) {
-//		requestNodeId();
-//	}
-//
-//	debug(PSTR("begin\n"));
-//	this->isDebug = false;
-//}
 
 void Esp8266EasyIoT::hwReset()
 {
@@ -127,8 +104,35 @@ void Esp8266EasyIoT::requestNodeId()
 	}
 }
 
+void Esp8266EasyIoT::requestTime(void (* _timeCallback)(unsigned long)) {
+	timeCallback = _timeCallback;
+	writeesp(build(msg, _nodeId, C_INTERNAL, I_TIME, NODE_SENSOR_ID, false).set(""));
+	
+	_waitingCommandResponse = true;
+	_commandRespondTimer = millis();
+
+	//waitIdle();
+
+	if (processesp() != E_IDLE)
+	{
+		for(int i=0;i<30;i++)
+		{
+			if (processesp() == E_IDLE)
+				break;
+			delay(10);
+		}
+	}
+}
+
+
 void Esp8266EasyIoT::present(uint8_t childSensorId, uint8_t sensorType, bool enableAck) {
 	sendinternal(build(msg, _nodeId, C_PRESENTATION, sensorType, childSensorId, enableAck).set(LIBRARY_VERSION));
+}
+
+
+void Esp8266EasyIoT::request(uint8_t childSensorId, uint8_t variableType)
+{
+	sendinternal(build(msg, _nodeId, C_REQ, variableType, childSensorId, false).set(""));
 }
 
 // external send
@@ -143,10 +147,30 @@ void Esp8266EasyIoT::send(Esp8266EasyIoTMsg &message)
 // internal send
 void Esp8266EasyIoT::sendinternal(Esp8266EasyIoTMsg &message)
 {	
-	//message.crc8();
-	//waitIdle();
-	if (waitIdle() && writeesp(message))
-		waitIdle();
+	//if (waitIdle() && writeesp(message))
+	//	waitIdle();
+	
+	if (processesp() != E_IDLE)
+	{
+		for(int i=0;i<30;i++)
+		{
+			if (processesp() == E_IDLE)
+				break;
+			delay(10);
+		}
+	}
+
+	writeesp(message);
+
+	if (processesp() != E_IDLE)
+	{
+		for(int i=0;i<30;i++)
+		{
+			if (processesp() == E_IDLE)
+				break;
+			delay(10);
+		}
+	}
 }
 
 bool Esp8266EasyIoT::waitIdle() {
@@ -186,6 +210,8 @@ bool Esp8266EasyIoT::process()
 
 			if (calcCrc == msg.crc)
 			{
+				msg.data[msg.length] = '\0';
+
 				if (command == C_INTERNAL)
 				{
 					debug(PSTR("Command\n"));
@@ -215,6 +241,16 @@ bool Esp8266EasyIoT::process()
 						_waitingCommandResponse = false;
 						resetPingTimmer();			
 					}
+					else if (type == I_TIME)
+					{
+						debug(PSTR("TIME received\n"));		
+						if (timeCallback != NULL) {
+							timeCallback(msg.getULong());
+						}
+						_waitingCommandResponse = false;
+						resetPingTimmer();			
+					}
+
 					else
 					{
 						debug(PSTR("Unkonwn command\n"));	
@@ -421,6 +457,7 @@ e_internal_state Esp8266EasyIoT::processesp()
 				_errorState = E_START;
 				_rxFlushProcessed = false;
 				startTimmer(1000);
+				processesp();
 			}
 			else if (rxchopUntil("Unlink", true, true) || rxchopUntil("FAIL", true, true) || rxchopUntil("ERROR", true, true))
 			{
@@ -446,7 +483,6 @@ e_internal_state Esp8266EasyIoT::processesp()
 					int i = 0;
 					bool startFound = false;
 
-					//uint8_t* buff = reinterpret_cast<uint8_t*>(&msg);
 					uint8_t* buff = reinterpret_cast<uint8_t*>(&msg);
 
 					// copy message
@@ -468,8 +504,18 @@ e_internal_state Esp8266EasyIoT::processesp()
 						process();
 					};	
 				}
+				else
+				{
+					debug(PSTR("receive no :\n"));	
+					_state = E_IDLE;
+					rxFlush();
+				}
 			}
-		}		
+			else
+				debug(PSTR("receive no OK\n"));	
+		}
+		else
+			debug(PSTR("receive no +IPD\n"));	
 		break;
 
 	case E_CIPSEND:
@@ -492,8 +538,9 @@ e_internal_state Esp8266EasyIoT::processesp()
 			_state = E_WAIT_OK;
 			_okState = E_IDLE;
 			_errorState = E_CIPSTART;
+
 		}
-		else if (!isTimeout(_startTime, _respondTimeout))
+		else if (isTimeout(_startTime, _respondTimeout))
 		{
 			_errorState = E_CIPSTART;
 			_rxFlushProcessed = true;
@@ -550,7 +597,6 @@ void Esp8266EasyIoT::receiveAll()
 		}
 	}
 }
-
 
 bool Esp8266EasyIoT::rxPos(const char* reference, byte*  from, byte* to)
 {

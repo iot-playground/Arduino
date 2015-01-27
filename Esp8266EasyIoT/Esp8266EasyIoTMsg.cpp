@@ -1,4 +1,5 @@
  /*
+ V1.1 - additional data types
  V1.0 - first version
  
  Created by Igor Jarc <igor.jarc1@gmail.com>
@@ -29,18 +30,21 @@ Esp8266EasyIoTMsg& Esp8266EasyIoTMsg::set(const char* value) {
 	length  = len;
 	miSetPayloadType(P_STRING);
 	strncpy(data, value, min(length, MAX_PAYLOAD));
-	// calculate CRC8
-	//crc8();
 	return *this;
 }
 
+Esp8266EasyIoTMsg& Esp8266EasyIoTMsg::set(uint8_t value) {
+	length = 1;
+	miSetPayloadType(P_BYTE);
+	data[0] = value;
+	return *this;
+}
 
 Esp8266EasyIoTMsg& Esp8266EasyIoTMsg::set(float value, uint8_t decimals) {
 	length =  5; // 32 bit float + persi
 	miSetPayloadType(P_FLOAT32);
 	fValue=value;
 	fPrecision = decimals;
-	//crc8();
 	return *this;
 }
 
@@ -53,9 +57,7 @@ uint16_t Esp8266EasyIoTMsg::getUInt() const {
 	} else {
 		return 0;
 	}
-
 }
-
 
 int Esp8266EasyIoTMsg::getInt() const {
 	if (miGetPayloadType() == P_INT16) { 
@@ -71,6 +73,25 @@ bool Esp8266EasyIoTMsg::getBool() const {
 	return getInt();
 }
 
+float Esp8266EasyIoTMsg::getFloat() const {
+	if (miGetPayloadType() == P_FLOAT32) {
+		return fValue;
+	} else if (miGetPayloadType() == P_STRING) {
+		return atof(data);
+	} else {
+		return 0;
+	}
+}
+
+unsigned long Esp8266EasyIoTMsg::getULong() const {
+	if (miGetPayloadType() == P_ULONG32) {
+		return ulValue;
+	} else if (miGetPayloadType() == P_STRING) {
+		return atol(data);
+	} else {
+		return 0;
+	}
+}
 
 
 /*

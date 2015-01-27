@@ -1,4 +1,5 @@
  /*
+ V1.1 - additional data types
  V1.0 - first version
  
  Created by Igor Jarc <igor.jarc1@gmail.com>
@@ -50,6 +51,7 @@ typedef enum {
 	E_CIPSEND_1,	// 
 	E_IDLE,			// socket open waiting for send or receive
 	E_RECEIVE,	    // receive data
+	E_RECEIVE1,	    // receive data
 	E_CIPCLOSE,		// close connection	
 	E_HWRESET,		// HW reset
 
@@ -82,11 +84,29 @@ public:
 	void present(uint8_t sensorId, uint8_t sensorType, bool ack=false);
 	void send(Esp8266EasyIoTMsg &message);
 	void hwReset();
-
 	uint16_t _nodeId;
-private:
+	void requestTime(void (* timeCallback)(unsigned long));
+
+	void request(uint8_t sensorId, uint8_t variableType);
+
+protected:
+	Esp8266EasyIoTMsg msg;
+	Esp8266EasyIoTMsg ack;
+	int _resetPin;
+
+private:  	
+	bool writeesp(Esp8266EasyIoTMsg &message);
+	void executeCommand(String cmd, unsigned long respondTimeout);
+	bool isOk(bool chop = true);
+	bool isError(bool chop = true);
+
+	void receiveAll();
 	void requestNodeId();
 	void sendinternal(Esp8266EasyIoTMsg &message);
+	e_internal_state processesp();
+#ifdef DEBUG
+	void debugPrint(const char *fmt, ... );
+#endif
 
 	bool isDebug;
 	Stream *_serial;
@@ -104,26 +124,6 @@ private:
 	bool isTimeout(unsigned long startTime, unsigned long timeout);
 	void setPingTimmer();
 	void resetPingTimmer();
-
-#ifdef DEBUG
-	void debugPrint(const char *fmt, ... );
-#endif
-
-protected:
-	Esp8266EasyIoTMsg msg;
-	Esp8266EasyIoTMsg ack;
-	int _resetPin;
-//	Esp8266EasyIoTMsg msgsend;
-
-//link fuctions
-	private:  
-	e_internal_state processesp();
-	bool writeesp(Esp8266EasyIoTMsg &message);
-	void executeCommand(String cmd, unsigned long respondTimeout);
-	bool isOk(bool chop = true);
-	bool isError(bool chop = true);
-
-	void receiveAll();
 
 	e_internal_state _state;
 	e_internal_state _okState;
@@ -150,6 +150,7 @@ protected:
 	uint8_t _txLen;
 
 	void (*msgCallback)(const Esp8266EasyIoTMsg &);
+	void (*timeCallback)(unsigned long); 
 };
 #endif
 

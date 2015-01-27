@@ -1,6 +1,7 @@
  /*
+ V1.1 - additional data types
  V1.0 - first version
- 
+
  Created by Igor Jarc <igor.jarc1@gmail.com>
  See http://iot-playground.com for details
  
@@ -16,8 +17,8 @@
 #endif
 
 
-#define LIBRARY_VERSION "0.1"
-#define PROTOCOL_VERSION 1
+#define LIBRARY_VERSION "1.1"
+#define PROTOCOL_VERSION 2
 #define MAX_MESSAGE_LENGTH 127
 #define HEADER_SIZE 9
 #define MAX_PAYLOAD (MAX_MESSAGE_LENGTH - HEADER_SIZE)
@@ -70,10 +71,12 @@ typedef enum {
 } e_command_type;
 
 typedef enum {
-	  I_ID_REQUEST = 0,		// sprejem
-      I_ID_RESPONSE = 1,	// oddaja
-      I_PING = 2,			// sprejem/oddaja
-      I_PING_RESPONSE = 3	// oddaja/oddaja
+	  I_ID_REQUEST    = 0,  // receive
+      I_ID_RESPONSE   = 1,	// send
+      I_PING		  = 2,	// send/receive
+      I_PING_RESPONSE = 3,	// send/receive
+	  I_BATTERY_LEVEL = 4,	// send
+      I_TIME          = 5	// send
 } e_internal_type;
 
 
@@ -85,7 +88,12 @@ typedef enum {
       S_ANALOG_INPUT    = 4,  // AI
       S_TEMP            = 5,  // AI
       S_HUM             = 6,  // AI
-      S_LEAK            = 7   // DI
+      S_LEAK            = 7,  // DI
+	  S_BARO            = 8,  // AI
+	  S_DIMMER          = 10, // AO, DO
+      S_TEMP_AO         = 11, // AO
+      S_HUM_AO          = 12, // AO
+	  S_LIGHT_LEVEL		= 13, // AI
 } e_sensor_type;
 
 
@@ -94,14 +102,19 @@ typedef enum {
 } e_data_type;
 
 
-    // Type of sensor data (for set/req/ack messages)
+// Type of sensor data (for set/req/ack messages)
 typedef enum {
-	  V_UNDEFINED = 0,
-      V_DIGITAL_INPUT = 1,
-      V_DIGITAL_OUTPUT = 2,
-      V_DOOR = 3,
-      V_TEMP = 4, 
-      V_HUM = 5, 
+	  V_UNDEFINED       = 0,
+      V_DIGITAL_VALUE   = 1,
+      V_DOOR            = 2,
+      V_TEMP            = 3, 
+      V_HUM             = 4,
+      V_PRESSURE        = 5,
+      V_FORECAST        = 6,
+      V_ANALOG_VALUE    = 7,
+      V_DIMMER          = 8,
+	  V_LIGHT_LEVEL     = 9,
+	  V_LEAK            = 10,
 } ;
 
 
@@ -117,17 +130,18 @@ public:
 
 	Esp8266EasyIoTMsg& set(const char* value);
 	Esp8266EasyIoTMsg& set(float value, uint8_t decimals);
+	Esp8266EasyIoTMsg& set(uint8_t value);
 
 	int getInt() const;
 	uint16_t getUInt() const;
 	bool getBool() const;
-
+	float getFloat() const;
+	unsigned long getULong() const;
 #else
 
 typedef union {
 struct
 {
-
 #endif
 	uint8_t start;					// start 
     uint8_t version;				// protocol version
