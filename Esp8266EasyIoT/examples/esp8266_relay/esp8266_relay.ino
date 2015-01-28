@@ -1,5 +1,6 @@
  /*
  V1.0 - first version
+ V1.1 - adopt to new library 
  
  Created by Igor Jarc <igor.jarc1@gmail.com>
  See http://iot-playground.com for details
@@ -46,7 +47,7 @@ void incomingMessage(const Esp8266EasyIoTMsg &message) {
   // We only expect one type of message from controller. But we better check anyway.
 
   Serial.println("New message");
-  if (message.type==S_DIGITAL_OUTPUT) {
+  if (message.type==V_DIGITAL_VALUE) {
     // Change relay state
     digitalWrite(message.sensor-1+RELAY_1, message.getBool()?RELAY_ON:RELAY_OFF);
 
@@ -56,5 +57,3 @@ void incomingMessage(const Esp8266EasyIoTMsg &message) {
     Serial.println(message.getBool());
   } 
 }
-
-
