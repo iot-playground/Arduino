@@ -1,3 +1,13 @@
+ /*
+ V1.0 - first version
+ 
+ Created by Igor Jarc <igor.jarc1@gmail.com>
+ See http://iot-playground.com for details
+ 
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ version 2 as published by the Free Software Foundation.
+ */
 #include <Esp8266EasyIoT.h>
 #include <SFE_BMP180.h>
 #include <Wire.h>
@@ -6,7 +16,7 @@
 #define ALTITUDE 301.0 // Altitude of my home
 #define ESP_RESET_PIN     12
 
-#define MILS_IN_MIN  1000
+#define MILS_IN_MIN  60000
 
 #define CHILD_ID_TEMP        0
 #define CHILD_ID_BARO        1
