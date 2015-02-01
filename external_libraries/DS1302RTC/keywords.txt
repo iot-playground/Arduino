@@ -1,0 +1,30 @@
+#######################################
+# Syntax Coloring Map For DS1302RTC
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+DS1302RTC KEYWORD1
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+get      KEYWORD2
+set      KEYWORD2
+read     KEYWORD2
+write    KEYWORD2
+
+readRTC  KEYWORD2
+readRAM  KEYWORD2
+writeRTC KEYWORD2
+writeRAM KEYWORD2
+
+haltRTC  KEYWORD2
+writeEN  KEYWORD2
+#######################################
+# Instances (KEYWORD2)
+#######################################
+RTC
+#######################################
+# Constants (LITERAL1)
+#######################################
