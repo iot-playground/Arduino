@@ -135,6 +135,12 @@ void Esp8266EasyIoT::request(uint8_t childSensorId, uint8_t variableType)
 	sendinternal(build(msg, _nodeId, C_REQ, variableType, childSensorId, false).set(""));
 }
 
+
+void Esp8266EasyIoT::sendBatteryLevel(uint8_t value, bool enableAck) {
+	sendinternal(build(msg, _nodeId, C_INTERNAL, I_BATTERY_LEVEL, NODE_SENSOR_ID, enableAck).set(value));
+}
+
+
 // external send
 void Esp8266EasyIoT::send(Esp8266EasyIoTMsg &message)
 {	
@@ -529,7 +535,16 @@ e_internal_state Esp8266EasyIoT::processesp()
 		_connectErrCnt = 0;
 		_rxFlushProcessed = true;				
 
-		if (rxchopUntil(">", true, true))
+		if (rxPos("+IPD", _rxHead, _rxTail, 0, 0))
+		{
+			_state = E_WAIT_OK;
+			_okState = E_RECEIVE;
+			_errorState = E_START;
+			_rxFlushProcessed = false;
+			startTimmer(1000);
+			processesp();
+		}
+		else if (rxchopUntil(">", true, true))
 		{
 			debug(PSTR("Sending len:%d\n"), _txLen);	
 
@@ -539,6 +554,11 @@ e_internal_state Esp8266EasyIoT::processesp()
 			_okState = E_IDLE;
 			_errorState = E_CIPSTART;
 
+		}
+		else if (isError(_rxFlushProcessed))
+		{
+			debug(PSTR("Response error\n"));	
+			_state = E_CIPSTART;	
 		}
 		else if (isTimeout(_startTime, _respondTimeout))
 		{
@@ -701,9 +721,9 @@ bool Esp8266EasyIoT::isError(bool chop)
 {
 	receiveAll();
 	if (chop)
-		return rxchopUntil("link is not", true, true) || rxchopUntil("Unlink", true, true) || rxchopUntil("Error", true, true) || rxchopUntil("ERROR", true, true) || rxchopUntil("FAIL", true, true);
+		return rxchopUntil("link is not", true, true) || rxchopUntil("Unlink", true, true) || rxchopUntil("Error", true, true) || rxchopUntil("ERROR", true, true) || rxchopUntil("FAIL", true, true) || rxchopUntil("busy s...", true, true);
 	else
-		return rxPos("link is not", _rxHead, _rxTail) || rxPos("Unlink", _rxHead, _rxTail) || rxPos("Error", _rxHead, _rxTail) || rxPos("ERROR", _rxHead, _rxTail) || rxPos("FAIL", _rxHead, _rxTail);
+		return rxPos("link is not", _rxHead, _rxTail) || rxPos("Unlink", _rxHead, _rxTail) || rxPos("Error", _rxHead, _rxTail) || rxPos("ERROR", _rxHead, _rxTail) || rxPos("FAIL", _rxHead, _rxTail) || rxPos("busy s...", _rxHead, _rxTail);
 }
 
 

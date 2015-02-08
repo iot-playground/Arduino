@@ -89,6 +89,8 @@ public:
 
 	void request(uint8_t sensorId, uint8_t variableType);
 
+	void sendBatteryLevel(uint8_t level, bool ack=false);
+
 protected:
 	Esp8266EasyIoTMsg msg;
 	Esp8266EasyIoTMsg ack;
