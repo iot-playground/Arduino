@@ -2,8 +2,10 @@
  V1.1 - additional data types
  V1.0 - first version
  
- Created by Igor Jarc <igor.jarc1@gmail.com>
+ Created by Igor Jarc
  See http://iot-playground.com for details
+ Please use community fourum on website
+
  
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -90,6 +92,9 @@ public:
 	void request(uint8_t sensorId, uint8_t variableType);
 
 	void sendBatteryLevel(uint8_t level, bool ack=false);
+
+	void setNewMsg(Esp8266EasyIoTMsg &);
+
 
 protected:
 	Esp8266EasyIoTMsg msg;

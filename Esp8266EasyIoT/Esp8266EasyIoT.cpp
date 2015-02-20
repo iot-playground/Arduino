@@ -2,8 +2,10 @@
  V1.1 - additional data types
  V1.0 - first version
  
- Created by Igor Jarc <igor.jarc1@gmail.com>
+ Created by Igor Jarc
  See http://iot-playground.com for details
+ Please use community fourum on website
+
  
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -62,7 +64,7 @@ void Esp8266EasyIoT::begin(void (*_msgCallback)(const Esp8266EasyIoTMsg &), int 
 	//while(processesp() != E_IDLE) delay(1);
 
 	// wait some time
-	for(int i=0;i<500;i++)
+	for(int i=0;i<600;i++)
 	{
 		if (processesp() != E_IDLE)
 			delay(10);
@@ -106,22 +108,23 @@ void Esp8266EasyIoT::requestNodeId()
 
 void Esp8266EasyIoT::requestTime(void (* _timeCallback)(unsigned long)) {
 	timeCallback = _timeCallback;
-	writeesp(build(msg, _nodeId, C_INTERNAL, I_TIME, NODE_SENSOR_ID, false).set(""));
+	//writeesp(build(msg, _nodeId, C_INTERNAL, I_TIME, NODE_SENSOR_ID, false).set(""));
 	
 	_waitingCommandResponse = true;
 	_commandRespondTimer = millis();
 
-	//waitIdle();
+	sendinternal(build(msg, _nodeId, C_INTERNAL, I_TIME, NODE_SENSOR_ID, false).set(""));
+	_waitingCommandResponse = false;
 
-	if (processesp() != E_IDLE)
-	{
-		for(int i=0;i<30;i++)
-		{
-			if (processesp() == E_IDLE)
-				break;
-			delay(10);
-		}
-	}
+	//if (processesp() != E_IDLE)
+	//{
+	//	for(int i=0;i<30;i++)
+	//	{
+	//		if (processesp() == E_IDLE)
+	//			break;
+	//		delay(10);
+	//	}
+	//}
 }
 
 
@@ -155,10 +158,12 @@ void Esp8266EasyIoT::sendinternal(Esp8266EasyIoTMsg &message)
 {	
 	//if (waitIdle() && writeesp(message))
 	//	waitIdle();
+
+	resetPingTimmer();
 	
 	if (processesp() != E_IDLE)
 	{
-		for(int i=0;i<30;i++)
+		for(int i=0;i<100;i++)
 		{
 			if (processesp() == E_IDLE)
 				break;
@@ -170,7 +175,7 @@ void Esp8266EasyIoT::sendinternal(Esp8266EasyIoTMsg &message)
 
 	if (processesp() != E_IDLE)
 	{
-		for(int i=0;i<30;i++)
+		for(int i=0;i<100;i++)
 		{
 			if (processesp() == E_IDLE)
 				break;
@@ -268,6 +273,7 @@ bool Esp8266EasyIoT::process()
 					debug(PSTR("Receive C_SET\n"));					
 					resetPingTimmer();	
 
+					_newMessage = false;
 					// Call incoming message callback if available
 					if (msgCallback != NULL) {
 						msgCallback(msg);
@@ -283,6 +289,8 @@ bool Esp8266EasyIoT::process()
 						// calclulate new CRC
 						ack.crc8();
 
+						debug(PSTR("ACK message\n"));
+						//sendinternal(ack);
 						if (writeesp(ack))
 						{
 							debug(PSTR("ACK message\n"));		
@@ -332,6 +340,12 @@ bool Esp8266EasyIoT::process()
 		ret = true;
 
 	return ret;
+}
+
+
+void Esp8266EasyIoT::setNewMsg(Esp8266EasyIoTMsg &msgnew)
+{
+	msg = msgnew;
 }
 
 
