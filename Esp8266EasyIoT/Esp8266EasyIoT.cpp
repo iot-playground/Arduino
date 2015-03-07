@@ -726,9 +726,9 @@ bool Esp8266EasyIoT::isOk(bool chop)
 {
 	receiveAll();
 	if (chop)
-		return rxchopUntil("ALREAY CONNECT", true, true) || rxchopUntil("Linked", true, true) || rxchopUntil("SEND OK", true, true) || rxchopUntil("OK", true, true) || rxchopUntil("no change", true, true);
+		return rxchopUntil("ALREADY CONNECT", true, true) || rxchopUntil("Linked", true, true) || rxchopUntil("SEND OK", true, true) || rxchopUntil("OK", true, true) || rxchopUntil("no change", true, true);
 	else
-		return rxPos("ALREAY CONNECT", _rxHead, _rxTail) || rxPos("Linked", _rxHead, _rxTail) || rxPos("SEND OK", _rxHead, _rxTail) || rxPos("OK", _rxHead, _rxTail) || rxPos("no change", _rxHead, _rxTail);
+		return rxPos("ALREADY CONNECT", _rxHead, _rxTail) || rxPos("Linked", _rxHead, _rxTail) || rxPos("SEND OK", _rxHead, _rxTail) || rxPos("OK", _rxHead, _rxTail) || rxPos("no change", _rxHead, _rxTail);
 }
 
 bool Esp8266EasyIoT::isError(bool chop)
