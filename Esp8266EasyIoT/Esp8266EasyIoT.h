@@ -1,10 +1,13 @@
  /*
+ V1.4 - upgraded to ESP8266 0.952 firmware version
+ V1.3 - additional data types
  V1.1 - additional data types
  V1.0 - first version
+
  
  Created by Igor Jarc
  See http://iot-playground.com for details
- Please use community fourum on website
+ Please use community fourum on website do not contact author directly
 
  
  This program is free software; you can redistribute it and/or
@@ -52,8 +55,8 @@ typedef enum {
 	E_CIPSEND,		// sending	
 	E_CIPSEND_1,	// 
 	E_IDLE,			// socket open waiting for send or receive
-	E_RECEIVE,	    // receive data
-	E_RECEIVE1,	    // receive data
+//	E_RECEIVE,	    // receive data
+//	E_RECEIVE1,	    // receive data
 	E_CIPCLOSE,		// close connection	
 	E_HWRESET,		// HW reset
 
@@ -113,6 +116,7 @@ private:
 	e_internal_state processesp();
 #ifdef DEBUG
 	void debugPrint(const char *fmt, ... );
+	void debugPrintBuffer();
 #endif
 
 	bool isDebug;
@@ -132,6 +136,8 @@ private:
 	void setPingTimmer();
 	void resetPingTimmer();
 
+	void processReceive();
+
 	e_internal_state _state;
 	e_internal_state _okState;
 	e_internal_state _errorState;
@@ -149,6 +155,7 @@ private:
 	bool rxPos(const char* reference, byte* from=0, byte* to=0);
 	bool rxPos(const char* reference, byte thishead, byte thistail, byte* from=0, byte* to=0);
 	bool rxchopUntil(const char* reference, bool movetotheend, bool usehead);
+	bool isInBuffer(byte pos1);
 	String rxCopy(byte from, byte to);
 	void rxFlush();
 	void startTimmer(unsigned long respondTimeout);

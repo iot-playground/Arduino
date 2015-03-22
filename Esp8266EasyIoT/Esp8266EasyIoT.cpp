@@ -1,10 +1,12 @@
  /*
+ V1.4 - upgraded to ESP8266 0.952 firmware version
+ V1.3 - additional data types
  V1.1 - additional data types
  V1.0 - first version
  
  Created by Igor Jarc
  See http://iot-playground.com for details
- Please use community fourum on website
+ Please use community fourum on website do not contact author directly
 
  
  This program is free software; you can redistribute it and/or
@@ -108,23 +110,12 @@ void Esp8266EasyIoT::requestNodeId()
 
 void Esp8266EasyIoT::requestTime(void (* _timeCallback)(unsigned long)) {
 	timeCallback = _timeCallback;
-	//writeesp(build(msg, _nodeId, C_INTERNAL, I_TIME, NODE_SENSOR_ID, false).set(""));
 	
 	_waitingCommandResponse = true;
 	_commandRespondTimer = millis();
 
 	sendinternal(build(msg, _nodeId, C_INTERNAL, I_TIME, NODE_SENSOR_ID, false).set(""));
 	_waitingCommandResponse = false;
-
-	//if (processesp() != E_IDLE)
-	//{
-	//	for(int i=0;i<30;i++)
-	//	{
-	//		if (processesp() == E_IDLE)
-	//			break;
-	//		delay(10);
-	//	}
-	//}
 }
 
 
@@ -156,9 +147,6 @@ void Esp8266EasyIoT::send(Esp8266EasyIoTMsg &message)
 // internal send
 void Esp8266EasyIoT::sendinternal(Esp8266EasyIoTMsg &message)
 {	
-	//if (waitIdle() && writeesp(message))
-	//	waitIdle();
-
 	resetPingTimmer();
 	
 	if (processesp() != E_IDLE)
@@ -327,8 +315,9 @@ bool Esp8266EasyIoT::process()
 	{
 		if (isTimeout(_commandRespondTimer, COMMAND_RESPONSE_TIME))
 		{
+			debug(PSTR("Command response timeout\n"));	
 			_waitingCommandResponse = false;
-			_state = E_CIPCLOSE;		
+			_state = E_CIPCLOSE;
 		}
 	}
 
@@ -370,18 +359,18 @@ e_internal_state Esp8266EasyIoT::processesp()
 	case E_WAIT_OK:		
 		if (isOk(_rxFlushProcessed))
 		{
-			//debug(PSTR("Response ok\n"));	
+			debug(PSTR("\nResponse->OK\n"));	
 			_state = _okState;
 			processesp();
 		}
 		else if (isError(_rxFlushProcessed))
 		{
-			debug(PSTR("Response error\n"));	
+			debug(PSTR("\nResponse->error\n"));	
 			_state = _errorState;			
 		}		
 		else if (isTimeout(_startTime, _respondTimeout))
 		{
-			debug(PSTR("Response timeout\n"));	
+			debug(PSTR("\nResponse->timeout\n"));	
 			_state = _errorState;
 		}
 		break;
@@ -446,7 +435,6 @@ e_internal_state Esp8266EasyIoT::processesp()
 		_cmd += SERVER_IP;
 		_cmd += "\",";
 		_cmd += SERVER_PORT;
-		_cmd +="\"";
 		executeCommand(_cmd, 17000);
 		_state = E_WAIT_OK;
 		_okState = E_IDLE;
@@ -471,14 +459,7 @@ e_internal_state Esp8266EasyIoT::processesp()
 		{
 			//receive
 			if (rxPos("+IPD", _rxHead, _rxTail, 0, 0))
-			{
-				_state = E_WAIT_OK;
-				_okState = E_RECEIVE;
-				_errorState = E_START;
-				_rxFlushProcessed = false;
-				startTimmer(1000);
-				processesp();
-			}
+				processReceive();
 			else if (rxchopUntil("Unlink", true, true) || rxchopUntil("FAIL", true, true) || rxchopUntil("ERROR", true, true))
 			{
 				_state = E_CWJAP1;
@@ -487,57 +468,6 @@ e_internal_state Esp8266EasyIoT::processesp()
 			}
 		}
 		break;
-	case E_RECEIVE:
-		if (rxPos("+IPD", _rxHead, _rxTail, &from1, 0))
-		{	
-			if (rxPos("OK", _rxHead, _rxTail, &from2, 0))
-			{
-				if (rxPos(":", _rxHead, _rxTail, &from2, 0))
-				{
-					String lenstr = rxCopy(from1 + 5, from2);				
-					byte packet_len = lenstr.toInt();
-
-					byte from = (from2 + 1) & BUFFERMASK;
-					byte to = (from2 + packet_len + 1) & BUFFERMASK;
-
-					int i = 0;
-					bool startFound = false;
-
-					uint8_t* buff = reinterpret_cast<uint8_t*>(&msg);
-
-					// copy message
-					for(byte b1=from; b1!=to;b1=(b1+1)& BUFFERMASK)
-					{		
-						if ((_rxBuffer[b1] == START_MSG) || (startFound))
-						{
-							*(buff + i++) = _rxBuffer[b1]; 
-							startFound = true;
-						}
-					}
-
-					rxchopUntil("OK", true, true);
-					_state = E_IDLE;
-					// process message
-					if (startFound)
-					{
-						_newMessage = true;
-						process();
-					};	
-				}
-				else
-				{
-					debug(PSTR("receive no :\n"));	
-					_state = E_IDLE;
-					rxFlush();
-				}
-			}
-			else
-				debug(PSTR("receive no OK\n"));	
-		}
-		else
-			debug(PSTR("receive no +IPD\n"));	
-		break;
-
 	case E_CIPSEND:
 		_cmd = "AT+CIPSEND="+String(_txLen);
 		executeCommand(_cmd, 17000);
@@ -550,14 +480,7 @@ e_internal_state Esp8266EasyIoT::processesp()
 		_rxFlushProcessed = true;				
 
 		if (rxPos("+IPD", _rxHead, _rxTail, 0, 0))
-		{
-			_state = E_WAIT_OK;
-			_okState = E_RECEIVE;
-			_errorState = E_START;
-			_rxFlushProcessed = false;
-			startTimmer(1000);
-			processesp();
-		}
+			processReceive();
 		else if (rxchopUntil(">", true, true))
 		{
 			debug(PSTR("Sending len:%d\n"), _txLen);	
@@ -588,12 +511,86 @@ e_internal_state Esp8266EasyIoT::processesp()
 }
 
 
+void Esp8266EasyIoT::processReceive()
+{
+	byte from1, from2;
+
+	if (rxPos("+IPD", _rxHead, _rxTail, &from1, 0))
+	{			
+		unsigned long recTimeout = millis();
+
+		while(true)
+		{
+			if (!isTimeout(recTimeout, 2000))
+			{
+				if (rxPos(":", _rxHead, _rxTail, &from2, 0))
+				{
+					String lenstr = rxCopy(from1 + 5, from2);				
+					byte packet_len = lenstr.toInt();
+
+					byte from = (from2 + 1) & BUFFERMASK;
+					byte to = (from2 + packet_len + 1) & BUFFERMASK;
+
+					if (isInBuffer(to))
+					{
+						int i = 0;
+						bool startFound = false;
+
+						uint8_t* buff = reinterpret_cast<uint8_t*>(&msg);
+
+						// copy message
+						for(byte b1=from; b1!=to;b1=(b1+1)& BUFFERMASK)
+						{		
+							if ((_rxBuffer[b1] == START_MSG) || (startFound))
+							{
+								*(buff + i++) = _rxBuffer[b1]; 
+								startFound = true;
+							}
+						}
+						
+						// copy rest if message at begginning
+						byte cnt = 0;
+						for(byte b1=to; b1!=_rxTail;b1=(b1+1)& BUFFERMASK)
+						{
+							_rxBuffer[(from1 + cnt) & BUFFERMASK ] = _rxBuffer[b1]; 
+							cnt++;
+						}
+						_rxTail = (from1 + cnt) & BUFFERMASK;	
+						if (startFound)
+						{
+							//debugPrintBuffer();
+							debug(PSTR("\nProcess new message\n"));
+							_newMessage = true;
+							process();
+						};
+						return;
+					}
+				}
+			}
+			else
+			{
+				debug(PSTR("Receive timeout\n"));	
+				_state = E_CIPCLOSE;
+				debugPrintBuffer();
+				return;
+			}
+			delay(10);
+			receiveAll();
+		}
+	}
+	else
+	{
+		debug(PSTR("Receive no +IPD\n"));	
+		_state = E_IDLE;
+	}
+}
+
 bool Esp8266EasyIoT::writeesp(Esp8266EasyIoTMsg &message)
 {
 	if (_state == E_IDLE)
 	{
 		message.crc8();
-		debug(PSTR("write: command: %d, type: %d, len: %d, sender: %d, crc:%d \n"), mGetCommand(message), message.type, message.length, mGetSender(message), message.crc);
+		debug(PSTR("\n\nwrite: command: %d, type: %d, len: %d, sender: %d, crc:%d \n"), mGetCommand(message), message.type, message.length, mGetSender(message), message.crc);
 		_txBuff = reinterpret_cast<const uint8_t*>(&message);
 		_txLen = (uint8_t)(message.length + HEADER_SIZE);
 		_state = E_CIPSEND;
@@ -722,13 +719,24 @@ String Esp8266EasyIoT::rxCopy(byte from, byte to)
 	return ret;
 }
 
+bool Esp8266EasyIoT::isInBuffer(byte pos1)
+{
+	if (_rxTail == pos1)
+		return true;
+
+	for(byte b1=_rxHead; b1!=_rxTail;b1=(b1+1)& BUFFERMASK)
+		if (pos1 == b1)
+			return true;
+	return false;
+}
+
 bool Esp8266EasyIoT::isOk(bool chop)
 {
 	receiveAll();
 	if (chop)
-		return rxchopUntil("ALREAY CONNECT", true, true) || rxchopUntil("Linked", true, true) || rxchopUntil("SEND OK", true, true) || rxchopUntil("OK", true, true) || rxchopUntil("no change", true, true);
+		return rxchopUntil("ALREADY CONNECTED", true, true) || rxchopUntil("Linked", true, true) || rxchopUntil("SEND OK", true, true) || rxchopUntil("OK", true, true) || rxchopUntil("no change", true, true);
 	else
-		return rxPos("ALREAY CONNECT", _rxHead, _rxTail) || rxPos("Linked", _rxHead, _rxTail) || rxPos("SEND OK", _rxHead, _rxTail) || rxPos("OK", _rxHead, _rxTail) || rxPos("no change", _rxHead, _rxTail);
+		return rxPos("ALREADY CONNECTED", _rxHead, _rxTail) || rxPos("Linked", _rxHead, _rxTail) || rxPos("SEND OK", _rxHead, _rxTail) || rxPos("OK", _rxHead, _rxTail) || rxPos("no change", _rxHead, _rxTail);
 }
 
 bool Esp8266EasyIoT::isError(bool chop)
@@ -787,5 +795,15 @@ void Esp8266EasyIoT::debugPrint(const char *fmt, ... ) {
 		_serialDebug->print(fmtBuffer);
 		_serialDebug->flush();
 	}
+}
+
+
+void Esp8266EasyIoT::debugPrintBuffer()
+{
+	debug(PSTR("\n\nDEBUG buffer start\n"));
+	debug(PSTR("rxBuffer:  _rxHead=%d, _rxTail=%d buffer=\n"), _rxHead, _rxTail);
+	for(byte b1=_rxHead; b1!=_rxTail;b1=(b1+1)& BUFFERMASK)
+		_serialDebug->print(_rxBuffer[b1]);
+	debug(PSTR("\n\nDEBUG buffer end\n"));
 }
 #endif

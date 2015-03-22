@@ -1,10 +1,12 @@
  /*
+ V1.4 - upgraded to ESP8266 0.952 firmware version
+ V1.3 - additional data types
  V1.1 - additional data types
  V1.0 - first version
 
  Created by Igor Jarc
  See http://iot-playground.com for details
- Please use community fourum on website
+ Please use community fourum on website do not contact author directly
 
  
  This program is free software; you can redistribute it and/or
@@ -19,7 +21,7 @@
 #endif
 
 
-#define LIBRARY_VERSION "1.3"
+#define LIBRARY_VERSION "1.4"
 #define PROTOCOL_VERSION 2
 #define MAX_MESSAGE_LENGTH 127
 #define HEADER_SIZE 9
