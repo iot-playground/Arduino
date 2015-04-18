@@ -9,6 +9,7 @@
  See http://iot-playground.com for details
  Please use community fourum on website do not contact author directly
 
+ Code based on MySensors datatypes and API. http://www.mysensors.org
  
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
