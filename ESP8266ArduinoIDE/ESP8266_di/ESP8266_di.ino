@@ -1,3 +1,15 @@
+ /*
+  Created by Igor Jarc
+ See http://iot-playground.com for details
+ Please use community forum on website do not contact author directly
+ 
+ External libraries:
+ - https://github.com/adamvr/arduino-base64
+ 
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ version 2 as published by the Free Software Foundation.
+ */
 #include <ESP8266WiFi.h>
 #include <Base64.h>
 
