@@ -572,7 +572,9 @@ void Esp8266EasyIoT::processReceive()
 			{
 				debug(PSTR("Receive timeout\n"));	
 				_state = E_CIPCLOSE;
+#ifdef DEBUG
 				debugPrintBuffer();
+#endif
 				return;
 			}
 			delay(10);
@@ -783,11 +785,11 @@ bool Esp8266EasyIoT::isTimeout(unsigned long startTime, unsigned long timeout)
 
 #ifdef DEBUG
 void Esp8266EasyIoT::debugPrint(const char *fmt, ... ) {
-	char fmtBuffer[300];
+	char fmtBuffer[128];
 	va_list args;
 	va_start (args, fmt );
 	va_end (args);
-	vsnprintf_P(fmtBuffer, 299, fmt, args);
+	vsnprintf_P(fmtBuffer, 127, fmt, args);
 	va_end (args);
 	
 	
