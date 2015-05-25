@@ -74,7 +74,7 @@ void loop ()
 
 void sendValue()
 {
-  gw.powerUp();  
+  //gw.powerUp();  
   gw.send(msg.set(val==HIGH ? 1 : 0));
 
   gw.powerDown();  
@@ -82,7 +82,7 @@ void sendValue()
   int batLevel = getBatteryLevel();
   if (oldBatLevel != batLevel)
   {
-    gw.powerUp();  
+    //gw.powerUp();  
     gw.sendBatteryLevel(batLevel);    
     oldBatLevel = batLevel;
   }
