@@ -1,4 +1,6 @@
  /*
+ 
+ V1.5 - added new data types
  V1.4 - upgraded to ESP8266 0.952 firmware version
  V1.3 - additional data types
  V1.1 - additional data types
@@ -22,7 +24,7 @@
 #endif
 
 
-#define LIBRARY_VERSION "1.4"
+#define LIBRARY_VERSION "1.5"
 #define PROTOCOL_VERSION 2
 #define MAX_MESSAGE_LENGTH 127
 #define HEADER_SIZE 9
@@ -99,6 +101,15 @@ typedef enum {
       S_TEMP_AO         = 11, // AO
       S_HUM_AO          = 12, // AO
 	  S_LIGHT_LEVEL		= 13, // AI
+      // new types 3.2.2015
+      S_DISTANCE        = 14,   // AI
+      S_DUST            = 15,   // AI
+      S_POWER           = 16,   // AI 
+      S_WATER           = 17,   // AI
+      S_UV              = 18,   // AI
+      S_MOTION          = 19,   // DI
+      // new type 8.4.2015
+      S_COVER           = 20,   // AI
 } e_sensor_type;
 
 
@@ -120,6 +131,19 @@ typedef enum {
       V_DIMMER          = 8,
 	  V_LIGHT_LEVEL     = 9,
 	  V_LEAK            = 10,
+	  // new types 3.2.2105
+      V_DISTANCE        = 11,
+      V_DUST_LEVEL      = 12,
+      V_POWER           = 13,
+      V_POWER_PER_TIME  = 14,
+      V_FLOW            = 15,
+      V_VOLUME          = 16,
+      V_UV              = 17,
+      // new data types 8.4.2015
+      V_UP              = 18,
+      V_DOWN            = 19,
+      V_STOP            = 20,
+      V_COVER_LEVEL     = 21,
 } ;
 
 
